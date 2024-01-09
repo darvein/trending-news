@@ -10,38 +10,22 @@ from newspaper import Article, Config, ArticleException
 import datetime
 from babel.dates import format_date
 
-import os
-import sys
-
-AZURE_SUBSCRIPTION_KEY=""
-
 class ChatApp:
-    def __init__(self, model="gpt-4-1106-preview"):
+    def __init__(self, model="gpt-4-1106-preview", max_tokens=2048, temperature=0.4):
         self.model = model
         self.messages = []
+        self.max_tokens = max_tokens
+        self.temperature = temperature
 
     def chat(self, message):
         client = OpenAI()
-
-        prompt = self.format_messages_for_prompt(self.messages)
         completion = client.chat.completions.create(
             model=self.model,
-            messages=[{'role': 'user', 'content': prompt}],
-            max_tokens=1000,  # You can adjust this value
-            temperature=0.7  # You can adjust this value
+            messages=[{'role': 'user', 'content': message}],
+            max_tokens=self.max_tokens,
+            temperature=self.temperature
         )
-
         return completion.choices[0].message.content
-
-    def format_messages_for_prompt(self, messages):
-        formatted_messages = []
-        for message in messages:
-            formatted_messages.append(f"{message['role'].capitalize()}: {message['content']}")
-        return "\n".join(formatted_messages)
-
-# Azure
-subscription_key = AZURE_SUBSCRIPTION_KEY
-region = "eastus"
 
 LOG_DEBUG = logging.DEBUG
 BLACK_LIST_CHATGPT = ["", "I am happy", "My name is John", "Estoy feliz", "Eres un asistente amable y servicial."]
@@ -124,16 +108,7 @@ def cleanup_text(s):
     return clean
 
 def translate_to_spanish(text):
-    output = ""
-
-    while output in BLACK_LIST_CHATGPT:
-        try:
-            app = ChatApp(model="gpt-4")
-            output = app.chat(f"Translate the following English text to Spanish:\n\n{text}\n")
-        except Exception as e:
-            print(f"Error during translation: {e}")
-            time.sleep(5)
-
+    output = call_chatgpt(f"Translate the following English text to Spanish:\n\n{text}\n")
     return output
 
 def call_chatgpt(prompt, max_tokens=2048, temperature=0.4):
@@ -141,25 +116,16 @@ def call_chatgpt(prompt, max_tokens=2048, temperature=0.4):
 
     while output in BLACK_LIST_CHATGPT:
         try:
-            app = ChatApp(model="gpt-4")
+            app = ChatApp(model="gpt-4-1106-preview", max_tokens=max_tokens, temperature=temperature)
             output = app.chat(prompt)
         except Exception as e:
-            print(f"Error during translation: {e}")
+            print(f"Error while calling chatgpt: {e}")
             time.sleep(5)
 
     return output
 
 def extract_important_keywords(text):
-    output = ""
-
-    while output in BLACK_LIST_CHATGPT:
-        try:
-            app = ChatApp(model="gpt-4")
-            output = app.chat(f"Get the main entity in 1 to 2 words from this setence:\n\n{text}\n")
-        except Exception as e:
-            print(f"Error during translation: {e}")
-            time.sleep(5)
-
+    output = call_chatgpt(f"Extract the most important keywords from the following text:\n\n{text}\n", max_tokens=512, temperature=0.4)
     return output
 
 def cprint(obj):

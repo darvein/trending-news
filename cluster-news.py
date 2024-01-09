@@ -1,9 +1,9 @@
+import re
 import sys
 import json
 import nltk
 import argparse
 import tldextract
-import spacy
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -22,7 +22,6 @@ MIN_UNIQUE_DOMAINS = 4
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download("punkt")
-
 
 def download_article(news_obj, title, cluster_id):
     domain = f"{tldextract.extract(news_obj['url']).domain}.{tldextract.extract(news_obj['url']).suffix}"
@@ -131,27 +130,24 @@ def main(args):
         for title in titles:
             news_obj = next(item for item in news_objects if item['title'] == title)
 
-            bunch_titles += (title + "\n")
+            bunch_titles += ("- " + title + "\n")
             print(f"- {title} ({news_obj['url']})")
 
             parsed_url = urlparse(news_obj['url'])
             domains_list.append(parsed_url.netloc)
 
         clogger.debug("{} Domains found.".format(len(set(domains_list))))
-
-        prompt_max_tokens = 1024
-        prompt_text = f"Create a short title from this list of titles:\n\n{bunch_titles}"
-
-        summarized_title = cu.call_chatgpt(prompt_text, prompt_max_tokens)
+#
+        prompt_text = f"Give me a summarized title from the following list of titles, keep in mind that an ideal article has 50 to 60 characters:\n\n{bunch_titles}"
+#
+        summarized_title = cu.call_chatgpt(prompt_text)
         clogger.debug(f"Summary title English: {summarized_title}")
 
         main_keywords = cu.extract_important_keywords(summarized_title)
 
         summarized_title = cu.translate_to_spanish(summarized_title)
-
-        clogger.debug(f"Summary title Spanish: {summarized_title}")
-
         summarized_title = summarized_title.replace('"', '')
+        clogger.debug(f"Summary title Spanish: {summarized_title}")
 
         cu.write_file(f"output-articles/{cluster_id}", f"{cluster_id}.txt.title", summarized_title)
         cu.write_file(f"output-articles/{cluster_id}", f"{cluster_id}.txt.image", main_keywords)
