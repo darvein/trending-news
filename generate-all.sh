@@ -1,13 +1,6 @@
 function summarize_articles_gpu() {
-  #python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
   export TF_FORCE_GPU_ALLOW_GROWTH=true
-
-  #for d in $(find output-articles/* -type d); do
-    #clusterid=$(echo "$d" | tr -cd '[:digit:]')
-    #python summarize-articles.py "${clusterid}" --debug 
-  #done
-
-    find output-articles/* -type d | xargs -I {} -P 1 bash -c 'clusterid=$(echo "{}" | tr -cd "[:digit:]"); python summarize-articles.py "${clusterid}" --debug'
+  find output-articles/* -type d | xargs -I {} -P 1 bash -c 'clusterid=$(echo "{}" | tr -cd "[:digit:]"); python summarize-articles.py "${clusterid}" --debug'
 }
 
 function get_news_rss() {
@@ -94,8 +87,8 @@ CUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file_
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/:$CUDNN_PATH/lib
 
 
-#cleanup
-#get_news_rss
+cleanup
+get_news_rss
 cluster_data
 #summarize_articles_gpu
 #get_images
